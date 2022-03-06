@@ -1,0 +1,126 @@
+---
+title: "Assignment 3 machine learning"
+author: "Riba Khan"
+date: "06/03/2022"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{UniversalBank=read.csv("~/Desktop/Fundamentals of Machine Learning/UniversalBank.csv")#calling the needed libraries
+
+#Calling the required libraries
+library(caret)
+library(ggplot2)
+library(lattice)
+library(class)
+library(ISLR)
+library(dplyr)
+library(reshape2)
+library(tidyr)
+library(e1071)
+
+summary(UniversalBank)
+UniversalBank$Personal.Loan = as.factor(UniversalBank$Personal.Loan)
+UniversalBank$Online = as.factor(UniversalBank$Online)
+UniversalBank$CreditCard = as.factor(UniversalBank$CreditCard)
+
+#set seed 
+set.seed(64060)
+#divide data set into training(60%) and validation(40%)sets
+train.index <- sample(row.names(UniversalBank), 0.6*dim(UniversalBank)[1])
+test.index <- setdiff(row.names(UniversalBank), train.index)
+train.df <- UniversalBank[train.index,]
+test.df <- UniversalBank[test.index,]
+train <- UniversalBank[train.index,]
+test = UniversalBank[train.index,]
+
+
+#TASK A
+#Create a pivot table
+#Here i am using the (melt) function
+melted.UniversalBank = melt(train,id=c("CreditCard","Personal.Loan"),variable= "Online")
+recast.UniversalBank=dcast(melted.UniversalBank,CreditCard+Personal.Loan~Online)
+recast.UniversalBank[,c(1:2,14)]
+
+#TASK B
+#the probability of loan acceptance (Loan = 1) conditional on 
+#having a bank credit card (CC = 1) and being an active user of online banking services (Online=1)
+#Answer : 85/3000 = 2.8%
+
+#TASK C
+#create two separate pivot table for training data
+melted.UniversalBankc1 = melt(train,id=c("Personal.Loan"),variable = "Online")
+melted.UniversalBankc2 = melt(train,id=c("CreditCard"),variable = "Online")
+
+recast.UniversalBankc1=dcast(melted.UniversalBankc1,Personal.Loan~Online)
+recast.UniversalBankc2=dcast(melted.UniversalBankc2,CreditCard~Online)
+Loanline=recast.UniversalBankc1[,c(1,13)]
+LoanCC = recast.UniversalBankc2[,c(1,14)]
+
+#looking at the table
+Loanline
+summary(Loanline)
+
+LoanCC
+summary(LoanCC)
+
+#Task D
+#Compute the following quantities [P(A | B) means “the probability ofA given B”]:  
+
+table(train[,c(14,10)])
+table(train[,c(13,10)])
+table(train[,c(10)])
+
+# i.) P(CC = 1 | Loan = 1) (the proportion of credit card holders among the loan acceptors)
+# Answer : 85/(85+200) = 0.29%
+
+# ii.) P(Online = 1 | Loan = 1)  
+# Answer : 174/(174+111) = 0.61%
+
+# iii.) P(Loan = 1) (the proportion of loan acceptors) 
+Loanline
+# Answer: 285/(285+ 2715) = 0.095%
+
+# iv.) P(CC = 1 | Loan = 0)  
+#Answer : 784/(784+ 1931) = 0.28%
+
+# v.) P(Online = 1 | Loan = 0) 
+# Answer : 1621/(1621+1094) = 0.59%
+
+#vi. P(Loan = 0) 
+# Answer : 2715/(2715+285) = 0.90%
+
+#TASK E 
+#Use the quantities computed above to compute the naive Bayes probability
+((85/(85+200))* (174/(174+111))* (285/(285+2715)))/((85/(85+200))* (174/(174+111))* (285/(285+2715))) + ((784/(784+1931)) * (1621/(1621+1094)) * (2715/(2715+285))) 
+# Answer : 1.15603
+
+
+#TASK F     
+#Compare this value with the one obtained from the pivot table in (B). Which is a more accurate estimate? 
+  
+# Answer : The calucalted answer is nearly the same. 
+# the difference between the exact method and the naive-baise method is 
+the exact method would need the the exact same independent variable
+classifications to predict, where the naive bayes method does not.
+  
+  
+# TASK G 
+# Run Navie Bayes for the data 
+  
+naive.train = train.df[,c(10,13:14)]
+naive.test = test.df[,c(10,13:14)]
+naivebayes = naiveBayes(Personal.Loan~.,data=naive.train)
+naivebayes
+summary(naivebayes)
+
+
+#the naive bayes is the exact same output we recieved in the previous methods. (.280)(.603)(.09)/(.280.603.09+.29.58.908) = .09 which is the same response provided as above.
+(0.29 * 0.48 * 0.09)/(0.29 * 0.48 * 0.09) + (0.28 * 0.49 * 0.90)
+# Answer = 1.12348
+
+
+
+
